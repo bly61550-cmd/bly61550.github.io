@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - لكل الطلاب</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #f0f2f5; }
+        .tool-card { transition: all 0.3s ease; }
+        .tool-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="app-container" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold text-blue-900">لكل الطلاب</h1>
+                    </div>
+                    <div class="flex items-center">
+                        <span id="user-name" class="text-gray-700 mr-4 font-semibold"></span>
+                        <img id="user-photo" class="h-8 w-8 rounded-full" src="https://placehold.co/40x40/E2E8F0/4A5568?text=U" alt="User photo">
+                        <button id="logout-btn" class="mr-4 text-gray-500 hover:text-red-600 focus:outline-none">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+            <div id="main-view">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">مشاريعي</h2>
+                <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+                    <h3 class="text-xl font-semibold mb-4">إنشاء مشروع جديد</h3>
+                    <input type="text" id="project-title" placeholder="عنوان المشروع (مثال: ملخص الفصل الأول)" class="w-full p-2 border rounded-md mb-4">
+                    <textarea id="project-content" class="w-full p-2 border rounded-md" rows="8" placeholder="الصق النص الذي تريد تحليله هنا..."></textarea>
+                    <button id="save-project-btn" class="mt-4 bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300">حفظ وبدء التحليل</button>
+                </div>
+                
+                <div id="projects-list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Projects will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Tool View (hidden by default) -->
+            <div id="tool-view" class="hidden fade-in">
+                <button id="back-to-projects" class="mb-6 bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">&larr; العودة للمشاريع</button>
+                <h2 id="tool-project-title" class="text-3xl font-bold text-gray-800 mb-6"></h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Original Text -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">النص الأصلي</h3>
+                        <div id="original-text-container" class="h-96 overflow-y-auto p-4 bg-gray-50 rounded-md border"></div>
+                    </div>
+                    <!-- AI Tools -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">الأدوات الذكية</h3>
+                        <div class="space-y-4">
+                            <!-- Tool Buttons -->
+                            <div class="flex flex-wrap gap-2">
+                                <button data-tool="summary" class="tool-btn bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">تلخيص</button>
+                                <button data-tool="questions" class="tool-btn bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">إنشاء أسئلة</button>
+                                <button data-tool="translate" class="tool-btn bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600">ترجمة</button>
+                                <button data-tool="chatbot" class="tool-btn bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600">اسألني</button>
+                            </div>
+                            <!-- Result Area -->
+                            <div id="tool-result-container" class="mt-4 p-4 h-80 bg-gray-100 rounded-md border overflow-y-auto">
+                                <p class="text-gray-500">اختر أداة لعرض النتائج هنا.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Spinner (whole page) -->
+    <div id="loader" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+    </div>
+
+    <script type="module">
+        // --- START: Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCR520U7i2UNpfI7j7j6UsQgwby90_soNo",
+          authDomain: "hussein-c5a1e.firebaseapp.com",
+          projectId: "hussein-c5a1e",
+          storageBucket: "hussein-c5a1e.appspot.com",
+          messagingSenderId: "586967501445",
+          appId: "1:586967501445:web:eb29cc2f2a75c3c542f7ec",
+          measurementId: "G-STCGBPH282"
+        };
+        // --- END: Firebase Configuration ---
+
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, getDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Auth Management ---
+        let currentUser;
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('user-name').textContent = user.displayName || 'مستخدم';
+                document.getElementById('user-photo').src = user.photoURL || 'https://placehold.co/40x40/E2E8F0/4A5568?text=U';
+                loadProjects();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                console.log('User signed out.');
+            }).catch((error) => {
+                console.error('Sign out error', error);
+            });
+        });
+        
+        // --- Gemini API Call Function ---
+        const GEMINI_API_KEY = firebaseConfig.apiKey.substring(0, 39);
+        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+        
+        async function callGemini(prompt) {
+             const resultContainer = document.getElementById('tool-result-container');
+             resultContainer.innerHTML = '<div class="flex justify-center items-center h-full"><div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div></div>';
+            try {
+                const response = await fetch(GEMINI_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                return "عذرًا، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي. يرجى المحاولة مرة أخرى.";
+            }
+        }
+
+        // --- Project Management ---
+        const saveProjectBtn = document.getElementById('save-project-btn');
+        const projectsList = document.getElementById('projects-list');
+        
+        saveProjectBtn.addEventListener('click', async () => {
+            const title = document.getElementById('project-title').value;
+            const content = document.getElementById('project-content').value;
+
+            if (!title.trim() || !content.trim()) {
+                alert('يرجى إدخال عنوان ومحتوى للمشروع.');
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "users", currentUser.uid, "projects"), {
+                    title: title,
+                    content: content,
+                    createdAt: new Date()
+                });
+                document.getElementById('project-title').value = '';
+                document.getElementById('project-content').value = '';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert('حدث خطأ أثناء حفظ المشروع.');
+            }
+        });
+
+        function loadProjects() {
+            if (!currentUser) return;
+            const projectsCol = collection(db, "users", currentUser.uid, "projects");
+            const q = query(projectsCol, orderBy("createdAt", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                projectsList.innerHTML = ''; // Clear list
+                snapshot.forEach((doc) => {
+                    const project = doc.data();
+                    const projectCard = `
+                        <div class="bg-white p-6 rounded-xl shadow-lg cursor-pointer tool-card" data-id="${doc.id}">
+                            <h4 class="text-lg font-bold text-blue-800 truncate">${project.title}</h4>
+                            <p class="text-gray-500 text-sm mt-1">${new Date(project.createdAt.seconds * 1000).toLocaleDateString()}</p>
+                            <p class="text-gray-600 mt-2 h-12 overflow-hidden">${project.content.substring(0, 100)}...</p>
+                        </div>
+                    `;
+                    projectsList.innerHTML += projectCard;
+                });
+            });
+        }
+        
+        // --- UI Navigation ---
+        const mainView = document.getElementById('main-view');
+        const toolView = document.getElementById('tool-view');
+        
+        let currentProjectData = null;
+
+        projectsList.addEventListener('click', async (e) => {
+            const card = e.target.closest('.tool-card');
+            if (card) {
+                const projectId = card.dataset.id;
+                const docRef = doc(db, "users", currentUser.uid, "projects", projectId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    currentProjectData = docSnap.data();
+                    document.getElementById('tool-project-title').textContent = currentProjectData.title;
+                    document.getElementById('original-text-container').textContent = currentProjectData.content;
+                    mainView.classList.add('hidden');
+                    toolView.classList.remove('hidden');
+                }
+            }
+        });
+
+        document.getElementById('back-to-projects').addEventListener('click', () => {
+            toolView.classList.add('hidden');
+            mainView.classList.remove('hidden');
+            currentProjectData = null;
+            document.getElementById('tool-result-container').innerHTML = '<p class="text-gray-500">اختر أداة لعرض النتائج هنا.</p>';
+        });
+
+        // --- AI Tool Logic ---
+        document.querySelectorAll('.tool-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                if (!currentProjectData) return;
+                const tool = button.dataset.tool;
+                const content = currentProjectData.content;
+                let prompt = '';
+                
+                switch(tool) {
+                    case 'summary':
+                        prompt = `لخص النص التالي بشكل احترافي وموجز باللغة العربية، ركز على النقاط الأساسية:\n\n"${content}"`;
+                        break;
+                    case 'questions':
+                        prompt = `بناءً على النص التالي، قم بإنشاء 3 أسئلة متنوعة (سؤال اختيار من متعدد مع 4 خيارات، سؤال مقالي عميق، وسؤال يتطلب إجابة قصيرة) باللغة العربية لاختبار الفهم:\n\n"${content}"`;
+                        break;
+                    case 'translate':
+                        prompt = `ترجم النص التالي إلى اللغة الإنجليزية ترجمة احترافية ودقيقة، مع الحفاظ على أي مصطلحات متخصصة:\n\n"${content}"`;
+                        break;
+                    case 'chatbot':
+                         prompt = `أنت مساعد ذكي ومتخصص في تحليل النصوص. أجب على هذا السؤال "ما هي الفكرة الرئيسية في هذا النص؟ وما هي الأدلة التي تدعمها؟" بناءً على النص التالي باللغة العربية:\n\n"${content}"`;
+                        break;
+                }
+                
+                if (prompt) {
+                    const result = await callGemini(prompt);
+                    document.getElementById('tool-result-container').innerText = result;
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
+
